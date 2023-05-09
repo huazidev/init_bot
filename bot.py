@@ -5,6 +5,9 @@ import asyncio
 from business_platform import telegram_bot
 from business_platform import discord_bot
 
+from config import discord_config
+from config import telegram_config
+
 
 def main():
 
@@ -20,10 +23,18 @@ def main():
     # asyncio.set_event_loop(loop)
     loop = asyncio.get_event_loop()
 
-    tasks = [
-        discord_bot.start_task(),
-        telegram_bot.start_task(),
-    ]
+    tasks = []
+    discord_token = str(discord_config['token'])
+    telegram_token = str(telegram_config['token'])
+    logging.info(f'discord token: {discord_token}')
+    logging.info(f'telegram token: {telegram_token}')
+
+    if discord_token:
+        tasks.append(discord_bot.start_task())
+
+    if telegram_token:
+        tasks.append(telegram_bot.start_task())
+
     try:
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.run_forever()
