@@ -1,6 +1,7 @@
 import logging
 import sys
 sys.path.append("..")
+import re
 
 from telegram import Message, MessageEntity, Update, constants, \
     BotCommand, ChatMember, InlineKeyboardButton, InlineKeyboardMarkup
@@ -8,8 +9,9 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
     filters, InlineQueryHandler, Application, CallbackContext, CallbackQueryHandler
 
 import yt_dlp
-
 from config import telegram_config
+from framework_sites import douyin
+from framework_sites import parse
 
 
 
@@ -34,19 +36,7 @@ commands = [
 ]
 
 
-async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Shows the help menu.
-    """
-    help_text = 'I\'m a ytb_dl bot, send me a ytb/twitter link!'
-    await update.message.reply_text(help_text, disable_web_page_preview=True)
-
-
-async def parse(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message
-    logging.info(message.text)
-    url = message.text
-
+def parse_url_by_ydl(url, num):
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4',
         'cookiesfrombrowser': ("chrome",),
@@ -58,19 +48,63 @@ async def parse(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         video_info = ydl.extract_info(url, download=False)
         # result = ydl.download([url])
-
         # logging.info(video_info)
         formats = video_info.get('formats', [])
         mp4_formats = [f for f in formats if f.get('ext') == 'mp4' and f.get('protocol') == 'https']
         for f in mp4_formats:
             print(f)
-        top_mp4_formats = sorted(mp4_formats, key=lambda x: x.get('height', 0), reverse=True)[:min(2, len(mp4_formats))]
+        top_mp4_formats = sorted(mp4_formats, key=lambda x: x.get('height', 0), reverse=True)[:min(3, len(mp4_formats))]
         # top_mp4_urls = [f.get('url') for f in top_mp4_formats]
-        for f in top_mp4_formats:
-            print(f['format_id'], f['ext'], f['resolution'], f['url'])
+        # for f in top_mp4_formats:
+        for i in range(len(top_mp4_formats)):
+            f = top_mp4_formats[i]
+            print(i, f['format_id'], f['ext'], f['resolution'], f['url'])
             resolution = f['resolution']
             url = f['url']
-            await message.reply_text(f'{resolution}\n{url}')
+            if i == num:
+                return resolution, url
+
+
+async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Shows the help menu.
+    """
+    help_text = 'I\'m a ytb_dl bot, send me a ytb/twitter link!'
+    await update.message.reply_text(help_text, disable_web_page_preview=True)
+
+
+async def twitter(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message
+    logging.info(message.text)
+    url = message.text
+    strs = url.split()
+    num = 0 if len(strs) == 1 else int(strs[1])
+    logging.info(num)
+
+    resolution, url = parse_url_by_ydl(url, num)
+    await message.reply_text(f'{resolution}\n{url}')
+
+
+async def guonei(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    # link_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    link_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    url_regex = re.compile(link_pattern)
+    # urls = re.search('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', text).groups()
+    match = url_regex.search(text)
+    if match:
+        url_ori = match.group()
+    # if len(urls) >= 1:
+    #     url_ori = urls[0]
+        logging.info(url_ori)
+        if 'douyin' in url_ori:
+            urls = douyin.douyin_parse(url_ori)
+            resolution = '720x1080'
+            for url in urls:
+                await update.message.reply_text(f'{resolution}\n{url}')
+        else:
+            resolution, url = parse_url_by_ydl(url_ori, 0)
+            await update.message.reply_text(f'{resolution}\n{url}')
 
 
 async def run():
@@ -90,11 +124,11 @@ async def run():
     # application.add_handler(CallbackQueryHandler(callback=self.draw_bg, pattern='.*beach|grass|space|street|mountain'))
 
     # application.add_handler(MessageHandler(filters.PHOTO & ~filters.CaptionRegex('dress|bg|mi|hand|lace|up|lower|ext|rep|high|clip|all'), self.trip))
-    application.add_handler(MessageHandler(filters.TEXT & filters.Entity("url") & filters.Regex(r'(.*twitter)'), parse))
     # application.add_handler(MessageHandler(filters.TEXT & filters.Entity(constants.MessageEntityType.URL), trip))
+    application.add_handler(MessageHandler(filters.TEXT & filters.Entity("url") & filters.Regex(r'(.*twitter)'), twitter))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.Regex(r'(.*twitter)')), guonei))
 
-
-    #application.add_error_handler(self.error_handler)
+    # application.add_error_handler(self.error_handler)
 
     # application.run_polling()
     await application.initialize()
