@@ -12,6 +12,7 @@ import yt_dlp
 from config import telegram_config
 from framework_sites import douyin
 from framework_sites import parse
+from framework_sites import xiaohongshu
 
 
 
@@ -31,7 +32,7 @@ def message_text(message: Message) -> str:
 
 commands = [
     BotCommand(command='help', description='Show help message'),
-    BotCommand(command='draw', description='draw a picture'),
+    BotCommand(command='down', description='down a link'),
     BotCommand(command='token', description='please input your replicate token, you should sign up and get your API token: https://replicate.com/account/api-tokens'),
 ]
 
@@ -69,8 +70,20 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Shows the help menu.
     """
-    help_text = 'I\'m a ytb_dl bot, send me a ytb/twitter link!'
+    commands_description = [f'/{command.command} - {command.description}' for command in commands]
+    help_text = 'I\'m a ytb_dl bot, send me a video link!' + \
+                '\n\n' + \
+                '\n'.join(commands_description) + \
+                '\n\n'
     await update.message.reply_text(help_text, disable_web_page_preview=True)
+
+
+async def down(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.message
+    image_query = message_text(message)
+    if image_query == '' or not image_query.startswith("http"):
+        await message.reply_text('Please provide a prompt! (e.g. /down <url>)')
+    await message.reply_document(image_query)
 
 
 async def twitter(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -102,6 +115,11 @@ async def guonei(update: Update, context: ContextTypes.DEFAULT_TYPE):
             resolution = '720x1080'
             for url in urls:
                 await update.message.reply_text(f'{resolution}\n{url}')
+        elif 'xiaohongshu' in url_ori or 'xhs' in url_ori:
+            urls = xiaohongshu.xhs_parse(url_ori)
+            resolution = '900x1200'
+            for url in urls:
+                await update.message.reply_text(f'{resolution}\n{url}')
         else:
             resolution, url = parse_url_by_ydl(url_ori, 0)
             await update.message.reply_text(f'{resolution}\n{url}')
@@ -118,6 +136,7 @@ async def run():
 
     application.add_handler(CommandHandler('start', help))
     application.add_handler(CommandHandler('help', help))
+    application.add_handler(CommandHandler('down', down))
 
     # application.add_handler(CallbackQueryHandler(callback=self.set_model, pattern='GuoFeng|chill|uber|majic'))
     # application.add_handler(CallbackQueryHandler(callback=self.draw_dress, pattern='.*dress|.*suit|.*wear|.*uniform|armor|hot|bikini|see|.*hanfu'))
