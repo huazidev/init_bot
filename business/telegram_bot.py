@@ -25,7 +25,7 @@ def message_text(message: Message) -> str:
         return ''
 
     for _, text in sorted(message.parse_entities([MessageEntity.BOT_COMMAND]).items(), key=(lambda item: item[0].offset)):
-        msg_text = message_text.replace(text, '').strip()
+        msg_text = msg_text.replace(text, '').strip()
 
     return msg_text if len(msg_text) > 0 else ''
 
