@@ -19,9 +19,9 @@ def main():
 
     # Setup and run Discor/Telegram bot
 
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    # loop = asyncio.get_event_loop()
 
     tasks = []
     discord_token = str(discord_config['token'])
@@ -43,6 +43,13 @@ def main():
     finally:
         loop.close()
 
+    # if discord_token:
+    #     await asyncio.create_task(discord_bot.start_task())
+    # if telegram_token:
+    #     logging.info(f'telegram token: {telegram_token}')
+    #     await asyncio.create_task(telegram_bot.start_task())
+
 
 if __name__ == '__main__':
     main()
+    # asyncio.run(main())
