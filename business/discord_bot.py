@@ -2,7 +2,7 @@ import logging
 
 import discord
 from discord.ext import commands
-from config import discord_config
+from kernel.config import discord_config
 
 description = '''An bot to change clothes.'''
 

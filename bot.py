@@ -2,8 +2,8 @@ import logging
 import os
 import asyncio
 
-from business_platform import telegram_bot
-from business_platform import discord_bot
+from business import telegram_bot
+from business import discord_bot
 
 from config import discord_config
 from config import telegram_config
