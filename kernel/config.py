@@ -5,6 +5,7 @@ load_dotenv()
 
 telegram_config = {
     'token': os.environ.get('TELEGRAM_BOT_TOKEN', ''),
+    'ins_token': os.environ.get('INS_BOT_TOKEN', ''),
     'admin_user_ids': os.environ.get('ADMIN_USER_IDS', '-'),
 }
 

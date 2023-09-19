@@ -2,11 +2,9 @@ import logging
 import os
 import asyncio
 
-from business import telegram_bot
+from business import telegram_bot, telegram_insdl_bot
 from business import discord_bot
-
-from config import discord_config
-from config import telegram_config
+from kernel.config import discord_config, telegram_config
 
 
 def main():
@@ -26,14 +24,19 @@ def main():
     tasks = []
     discord_token = str(discord_config['token'])
     telegram_token = str(telegram_config['token'])
+    ins_telegram_token = str(telegram_config['ins_token'])
     logging.info(f'discord token: {discord_token}')
     logging.info(f'telegram token: {telegram_token}')
+    logging.info(f'ins telegram token: {ins_telegram_token}')
 
     if discord_token:
         tasks.append(discord_bot.start_task())
 
     if telegram_token:
         tasks.append(telegram_bot.start_task())
+
+    if ins_telegram_token:
+        tasks.append(telegram_insdl_bot.start_task())
 
     try:
         loop.run_until_complete(asyncio.gather(*tasks))
