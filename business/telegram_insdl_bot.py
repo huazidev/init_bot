@@ -10,6 +10,11 @@ from kernel.config import telegram_config
 # 创建 Instaloader 实例
 L = instaloader.Instaloader(download_video_thumbnails=False)
 
+# chrome 按 f12 打开开发者模式，在 Application 的 cookie 找到 sessionid 填上就可以了，不确定调用多了会不会封账户，csrftoken 字段要有，但可以不填
+L.load_session("huazidev",
+               {"sessionid": "",
+                "csrftoken": ""})
+
 commands = [
     BotCommand(command='help', description='Show help message'),
     # BotCommand(command='token', description='please input your replicate token, you should sign up and get your API token: https://replicate.com/account/api-tokens'),
@@ -51,6 +56,10 @@ async def get_instagram_link(update: Update, context: CallbackContext):
         if post.typename == 'GraphImage':
             logging.info(f"post_url:{post.url}")
             await update.message.reply_document(document=post.url)
+
+        if post.typename == 'GraphVideo':
+            logging.info(f"post_url:{post.video_url}")
+            await update.message.reply_document(document=post.video_url)
     except Exception as e:
         await update.message.reply_text(f"获取下载地址失败：{e}")
 
